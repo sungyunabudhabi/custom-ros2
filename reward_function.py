@@ -48,9 +48,9 @@ def reward_function(params):
         else:
             current_reward = MIN_REWARD
         if is_offtrack:
-            current_reward *= 0.4
+            current_reward *= 0.1
         if is_crashed:
-            current_reward *= 0.04
+            current_reward *= 0.01
         if is_reversed:
             current_reward *= 0.1
         return current_reward
@@ -68,7 +68,7 @@ def reward_function(params):
 
     def progress_reward(current_reward):
         if steps > 0:
-            current_reward += progress * (1000.0 / steps)
+            current_reward += progress / steps
         return current_reward
 
     def throttle_reward(current_reward):
@@ -80,7 +80,7 @@ def reward_function(params):
         if speed < 1.0:
             current_reward *= 0.5
         elif speed > 3.0:
-            current_reward *= 1.1
+            current_reward *= 2.0
         return current_reward
 
     def raceline_reward(current_reward):
