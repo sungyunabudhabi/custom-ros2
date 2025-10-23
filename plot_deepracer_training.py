@@ -103,4 +103,4 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
-print("\n Plot generation complete.")
+print("\n Plot generation complete lol.")
