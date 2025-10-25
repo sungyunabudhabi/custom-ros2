@@ -112,7 +112,12 @@ def reward_function(params):
         return current_reward
 
     def throttle_reward(current_reward):    # reward for maintaining a higher speed, but not too high in curves
-        if abs(steering_angle) > 10 and speed < 2.5 - (0.06 * abs(steering_angle)):
+        # compute track direction using four waypoints ahead/behind
+        track_direction = math.degrees(
+            math.atan2(wp5[1] - wp4[1], wp5[0] - wp4[0])
+        )
+
+        if abs(steering_angle) > 10 and speed <= 2.5 - (0.06 * abs(steering_angle)):
             current_reward *= 2.0
         return current_reward
 
@@ -237,7 +242,7 @@ def reward_function(params):
         reward = (
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
-            (0.8)*reward_throttle + 
+            (1.0)*reward_throttle + 
             (0.5)*reward_speed + 
             (1.0)*reward_raceline 
             # + (0.5)*reward_proximity
@@ -249,8 +254,8 @@ def reward_function(params):
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
             (0.5)*reward_throttle + 
-            (0.5)*reward_speed + 
-            (0.5)*reward_raceline 
+            (0.8)*reward_speed + 
+            (0.8)*reward_raceline 
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
         )
