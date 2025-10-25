@@ -45,13 +45,11 @@ def reward_function(params):
     idx2 = (closest_waypoints[1] + 1) % wp_len
     idx3 = (closest_waypoints[1] + 2) % wp_len
     idx4 = (closest_waypoints[1] + 3) % wp_len
-    idx5 = (closest_waypoints[1] + 4) % wp_len
     wp0 = waypoints[idx0]
     wp1 = waypoints[idx1]
     wp2 = waypoints[idx2]
     wp3 = waypoints[idx3]
     wp4 = waypoints[idx4]
-    wp5 = waypoints[idx5]
 
     # compute the straightness of the 4 closest waypoints
     # maybe use earlier waypoints because the car is braking too early
@@ -212,52 +210,46 @@ def reward_function(params):
     reward = on_track_reward(reward)
 
     # ---- COMBINE REWARD COMPONENTS ----
-    reward_ontrack = on_track_reward(reward_ontrack)    #or
-    reward_steering = steering_reward(reward_steering)  #or steering_reward(reward)
-    reward_step = step_reward(reward_step)              #or step_reward(reward)
-    reward_throttle = throttle_reward(reward_throttle)  #or throttle_reward(reward)
-    reward_speed = speed_reward(reward_speed)           #or speed_reward(reward)
-    reward_raceline = raceline_reward(reward_raceline)  #or raceline_reward(reward)
+    reward_ontrack = on_track_reward(reward)    
+    reward_steering = steering_reward(reward)  
+    reward_step = step_reward(reward)
+    reward_throttle = throttle_reward(reward)  
+    reward_speed = speed_reward(reward)           
+    reward_raceline = raceline_reward(reward)  
     # reward_proximity = proximity_reward(reward_proximity)
 
     # specialized straight
     if r_value > 0.8:
         reward = (
-            reward_ontrack*(
             (1.0)*reward_steering + 
             (0.5)*reward_step + 
             (0.5)*reward_throttle + 
             (1.0)*reward_speed + 
             (0.5)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
         
     # specialized curve
     elif r_value < 0.5:
         reward = (
-            reward_ontrack*(
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
             (0.7)*reward_throttle + 
             (0.5)*reward_speed + 
             (1.0)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
     # transition
     else:
         reward = (
-            reward_ontrack*(
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
             (0.5)*reward_throttle + 
             (0.5)*reward_speed + 
             (0.5)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
     return reward
