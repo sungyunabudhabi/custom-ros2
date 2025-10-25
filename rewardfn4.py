@@ -45,11 +45,13 @@ def reward_function(params):
     idx2 = (closest_waypoints[1] + 1) % wp_len
     idx3 = (closest_waypoints[1] + 2) % wp_len
     idx4 = (closest_waypoints[1] + 3) % wp_len
+    idx5 = (closest_waypoints[1] + 4) % wp_len
     wp0 = waypoints[idx0]
     wp1 = waypoints[idx1]
     wp2 = waypoints[idx2]
     wp3 = waypoints[idx3]
     wp4 = waypoints[idx4]
+    wp5 = waypoints[idx5]
 
     # compute the straightness of the 4 closest waypoints
     # maybe use earlier waypoints because the car is braking too early
@@ -110,7 +112,7 @@ def reward_function(params):
         return current_reward
 
     def throttle_reward(current_reward):    # reward for maintaining a higher speed, but not too high in curves
-        if abs(steering_angle) > 10 and speed < 2.5 - (0.04 * abs(steering_angle)):
+        if abs(steering_angle) > 10 and speed < 2.5 - (0.06 * abs(steering_angle)):
             current_reward *= 2.0
         return current_reward
 
@@ -146,7 +148,7 @@ def reward_function(params):
     def raceline_reward(current_reward):    # reward for following the optimal racing line through curves
         # compute track direction using four waypoints ahead/behind
         track_direction = math.degrees(
-            math.atan2(wp4[1] - wp3[1], wp4[0] - wp3[0])
+            math.atan2(wp5[1] - wp4[1], wp5[0] - wp4[0])
         )
 
         # right curve
@@ -235,7 +237,7 @@ def reward_function(params):
         reward = (
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
-            (0.7)*reward_throttle + 
+            (0.8)*reward_throttle + 
             (0.5)*reward_speed + 
             (1.0)*reward_raceline 
             # + (0.5)*reward_proximity
