@@ -112,12 +112,7 @@ def reward_function(params):
         return current_reward
 
     def throttle_reward(current_reward):    # reward for maintaining a higher speed, but not too high in curves
-        # compute track direction using four waypoints ahead/behind
-        track_direction = math.degrees(
-            math.atan2(wp5[1] - wp4[1], wp5[0] - wp4[0])
-        )
-
-        if abs(steering_angle) > 10 and speed <= 2.5 - (0.06 * abs(steering_angle)):
+        if abs(steering_angle) > 10 and speed <= 2.5 - (0.05 * abs(steering_angle)):
             current_reward *= 2.0
         return current_reward
 
