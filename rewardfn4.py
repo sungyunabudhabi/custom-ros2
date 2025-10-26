@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+# Edit: changed the way the functions are called at the end, to give the ontrack-reward more significance.
 
 def reward_function(params):
     """

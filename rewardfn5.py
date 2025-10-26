@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-# Edit: split reward functions into 2 parts, straight line and curve sections, to give more specialized rewards.
+# Edit: added extreme cases for the hairpin turns, and slightly changed the parameters in the raceline reward.
 
 def reward_function(params):
     """
@@ -113,7 +113,7 @@ def reward_function(params):
         return current_reward
 
     def throttle_reward(current_reward):    # reward for maintaining a higher speed, but not too high in curves
-        if abs(steering_angle) > 10 and speed < 2.5 - (0.04 * abs(steering_angle)):
+        if abs(steering_angle) > 10 and speed <= 2.5 - (0.05 * abs(steering_angle)):
             current_reward *= 2.0
         return current_reward
 
@@ -149,12 +149,12 @@ def reward_function(params):
     def raceline_reward(current_reward):    # reward for following the optimal racing line through curves
         # compute track direction using four waypoints ahead/behind
         track_direction = math.degrees(
-            math.atan2(wp4[1] - wp3[1], wp4[0] - wp3[0])
+            math.atan2(wp5[1] - wp4[1], wp5[0] - wp4[0])
         )
 
         # right curve
         if (
-            (track_direction - heading) < 0
+            (track_direction - heading) < -20
             and not is_left_of_center
             and 0.1 < distance_from_center < (track_width / 2.0)
         ):
@@ -162,7 +162,7 @@ def reward_function(params):
 
         # left curve
         elif (
-            (track_direction - heading) > 0
+            (track_direction - heading) > 20
             and is_left_of_center
             and 0.1 < distance_from_center < (track_width / 2.0)
         ):
@@ -171,6 +171,20 @@ def reward_function(params):
         # smooth operation
         if abs(track_direction - heading) < 15.0 and abs(steering_angle) < 10.0:
             current_reward *= 1.2
+
+        # right extreme curve
+        if ((track_direction - heading) < -140.0
+            and is_left_of_center
+            and 0.1 < distance_from_center < (track_width / 2.0)
+        ):
+            current_reward *= 1.3
+
+        # left extreme curve
+        elif ((track_direction - heading) > 140.0
+            and not is_left_of_center
+            and 0.1 < distance_from_center < (track_width / 2.0)
+        ):
+            current_reward *= 1.3
 
 
         """# straight line into a curve (the track_direction used here is with respect to the x-axis, redundant) 
@@ -213,52 +227,46 @@ def reward_function(params):
     reward = on_track_reward(reward)
 
     # ---- COMBINE REWARD COMPONENTS ----
-    reward_ontrack = on_track_reward(reward_ontrack)    #or
-    reward_steering = steering_reward(reward_steering)  #or steering_reward(reward)
-    reward_step = step_reward(reward_step)              #or step_reward(reward)
-    reward_throttle = throttle_reward(reward_throttle)  #or throttle_reward(reward)
-    reward_speed = speed_reward(reward_speed)           #or speed_reward(reward)
-    reward_raceline = raceline_reward(reward_raceline)  #or raceline_reward(reward)
+    reward_ontrack = on_track_reward(reward)    
+    reward_steering = steering_reward(reward)  
+    reward_step = step_reward(reward)
+    reward_throttle = throttle_reward(reward)  
+    reward_speed = speed_reward(reward)           
+    reward_raceline = raceline_reward(reward)  
     # reward_proximity = proximity_reward(reward_proximity)
 
     # specialized straight
     if r_value > 0.8:
         reward = (
-            reward_ontrack*(
             (1.0)*reward_steering + 
             (0.5)*reward_step + 
             (0.5)*reward_throttle + 
             (1.0)*reward_speed + 
             (0.5)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
         
     # specialized curve
     elif r_value < 0.5:
         reward = (
-            reward_ontrack*(
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
-            (0.7)*reward_throttle + 
+            (1.0)*reward_throttle + 
             (0.5)*reward_speed + 
             (1.0)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
     # transition
     else:
         reward = (
-            reward_ontrack*(
             (0.5)*reward_steering + 
             (0.5)*reward_step + 
             (0.5)*reward_throttle + 
-            (0.5)*reward_speed + 
-            (0.5)*reward_raceline 
-            # + (0.5)*reward_proximity)
+            (0.8)*reward_speed + 
+            (0.8)*reward_raceline 
+            # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
-            )
         )
     return reward
