@@ -1,8 +1,16 @@
+# A reward function that minimizes the human input that might manipulate the agent's behavior.
 import math
 import numpy as np
 
-# Edit: changed waypoint indices to accommodate longer tracks and closer spacing.
-# waypoints for steering reward changed to look a bit further ahead.
+try:
+    if 'RACE_LINE' not in globals():
+        global RACE_LINE
+        RACE_LINE = np.load('/opt/ml/input/config/custom_files/my_race_line.npy')
+except Exception as e:
+    print(f"Error loading custom waypoints: {e}")
+    RACE_LINE = None
+
+# Edit: 
 
 def reward_function(params):
     """
@@ -30,54 +38,9 @@ def reward_function(params):
     is_offtrack = params['is_offtrack']
     is_reversed = params['is_reversed']
     track_length = params['track_length']
-    objects_distance = params['objects_distance']
-    objects_speed = params['objects_speed']
-    objects_heading = params['objects_heading']
-    objects_left_of_center = params['objects_left_of_center']
-    objects_location = params['objects_location']
-    closest_objects = params['closest_objects']
     x = params['x']
     y = params['y']
     is_left_of_center = params['is_left_of_center']
-
-    # Pre-compute some useful values
-    wp_len = len(waypoints)
-    if wp_len > 250:
-        idx0 = (closest_waypoints[0])
-        idx1 = (closest_waypoints[1])
-        idx2 = (closest_waypoints[1] + 3) % wp_len
-        idx3 = (closest_waypoints[1] + 6) % wp_len
-        idx4 = (closest_waypoints[1] + 9) % wp_len
-        idx5 = (closest_waypoints[1] + 12) % wp_len
-    else:
-        idx0 = (closest_waypoints[0])
-        idx1 = (closest_waypoints[1])
-        idx2 = (closest_waypoints[1] + 2) % wp_len
-        idx3 = (closest_waypoints[1] + 4) % wp_len
-        idx4 = (closest_waypoints[1] + 6) % wp_len
-        idx5 = (closest_waypoints[1] + 8) % wp_len
-
-    wp0 = waypoints[idx0]
-    wp1 = waypoints[idx1]
-    wp2 = waypoints[idx2]
-    wp3 = waypoints[idx3]
-    wp4 = waypoints[idx4]
-    wp5 = waypoints[idx5]
-
-    # compute the straightness of the 4 closest waypoints
-    # maybe use earlier waypoints because the car is braking too early
-    x = np.array([wp1[0], wp2[0], wp3[0], wp4[0]])
-    y = np.array([wp1[1], wp2[1], wp3[1], wp4[1]])
-
-    r_matrix = np.corrcoef(x, y)
-    r_value = abs(r_matrix[0, 1])
-
-    if np.isnan(r_value):
-        r_value = 1.0
-    # r_value varies between 0 and 1, with 1 being a perfect straight line
-    # we can use this to vary the speed reward
-    # more reward for higher r_value (straighter section of track)
-    # less reward for lower r_value (curvier section of track)
 
     # Initialize reward (WE MIGHT NOT HAVE TO DO THIS)
     reward = 1.0
@@ -101,7 +64,7 @@ def reward_function(params):
 
     def steering_reward(current_reward):    # reward for steering in the direction of the track
         track_direction = math.degrees(
-            math.atan2(wp2[1] - wp1[1], wp2[0] - wp1[0])
+            math.atan2(wp2[1] - wp0[1], wp2[0] - wp0[0])
         )
         direction_diff = abs(track_direction - heading)
         if abs(steering_angle - direction_diff) < 10.0:
@@ -130,7 +93,6 @@ def reward_function(params):
 
     # maybe have a separate reward for straight vs curve sections, so that its weights can be adjusted individually.
 
-
     def speed_reward(current_reward):       # reward for adjusting speed according to the straightness of the track
         if r_value < 0.5 and speed > 1.5:
             current_reward *= 0.5  # slow down for curvier sections
@@ -144,19 +106,47 @@ def reward_function(params):
 
         return current_reward
 
-    def brake_reward(current_reward):        #reward for braking before curves
+    def reward_function(current_reward):
+
+        if RACE_LINE is None:
+            return 1e-3 # Fail fast if the file didn't load
+
+        # --- 2. Get car's position ---
+        car_pos = np.array([params['x'], params['y']])
+
+        # --- 3. Find the distance to *your* race line ---
+        # This finds the shortest distance from the car to any point on your custom line
+        distances = np.linalg.norm(RACE_LINE - car_pos, axis=1)
+        min_distance_to_race_line = np.min(distances)
+
+        # --- 4. Reward proximity to *your* line ---
+        # It rewards being close to the RACE_LINE, while the car
+        # *sees* the simulation with the *correct* visual centerline.
+        
+        # A "corridor" width to aim for (e.g., 0.15 meters)
+        corridor_width = 0.15 
+        sharpness = 3 # A sharpness of 5 is very high, 3 is safer
+
+        reward = 2 * np.exp(-abs(min_distance_to_race_line / corridor_width) * sharpness)
+        
+        return current_reward
+
+    """def brake_reward(current_reward):        #reward for braking before curves
         # compute the path direction of waypoints 2 and 3 ahead
         path_direction = math.degrees(
-            math.atan2(wp3[1] - wp2[1], wp3[0] - wp2[0]))
+            math.atan2(wp3[1] - wp1[1], wp3[0] - wp1[0]))
         direction_diff = abs(path_direction - heading)
         if direction_diff > DIRECTION_THRESHOLD and speed > 2.0:
             current_reward *= 0.5  # penalize not braking before curves
         elif direction_diff > DIRECTION_THRESHOLD and speed <= 2.0:
             current_reward *= 2.0  # reward braking before curves
 
-        return current_reward
+        return current_reward"""
 
-    def raceline_reward(current_reward):    # reward for following the optimal racing line through curves
+
+# The raceline reward function is no longer needed, since the waypoints already represent the optimal racing line.
+
+    """def raceline_reward(current_reward):    # reward for following the optimal racing line through curves
         # compute track direction using four waypoints ahead/behind
         track_direction = math.degrees(
             math.atan2(wp5[1] - wp4[1], wp5[0] - wp4[0])
@@ -195,41 +185,6 @@ def reward_function(params):
             and 0.1 < distance_from_center < (track_width / 2.0)
         ):
             current_reward *= 1.3
-
-
-        """# straight line into a curve (the track_direction used here is with respect to the x-axis, redundant) 
-        if (
-            0.03 < distance_from_center < (track_width / 2.0)
-            and not is_left_of_center
-            and track_direction < 0
-        ):
-            current_reward *= 1.1
-        if (
-            0.03 < distance_from_center < (track_width / 2.0)
-            and is_left_of_center
-            and track_direction > 0
-        ):
-            current_reward *= 1.1"""
-
-        return current_reward
-
-# ---- OBJECT AVOIDANCE FUNCTION ---- does not work with time trial tracks
-    """def proximity_reward(current_reward):
-        next_ob_idx = closest_objects[1]
-        next_ob = objects_location[next_ob_idx]
-        foll_ob_idx = (closest_objects[1] + 1) % len(objects_location)
-        foll_ob = objects_location[foll_ob_idx]
-
-        
-        # crude check for objects ahead
-        if closest_objects[0] >= 10:
-            current_reward *= 2.0
-
-        # if there are moving objects, penalize if slower than us
-        if len(objects_speed) > 0 and objects_speed[0] > speed:
-            current_reward *= 0.5
-
-        
 
         return current_reward"""
 
