@@ -51,6 +51,7 @@ def reward_function(params):
     reward_speed = 1.0
     reward_raceline = 1.0
     reward_proximity = 1.0
+    reward_waypoint = 1.0
 
     # ---- TIME TRIAL FUNCTIONS ----
     def on_track_reward(current_reward):    # reward if the wheels stay inside the two borders of the track
@@ -106,7 +107,7 @@ def reward_function(params):
 
         return current_reward
 
-    def reward_function(current_reward):
+    def waypoint_reward(current_reward):
 
         if RACE_LINE is None:
             return 1e-3 # Fail fast if the file didn't load
@@ -198,16 +199,18 @@ def reward_function(params):
     reward_throttle = throttle_reward(reward)  
     reward_speed = speed_reward(reward)           
     reward_raceline = raceline_reward(reward)  
+    reward_waypoint = waypoint_reward(reward)
     # reward_proximity = proximity_reward(reward_proximity)
 
     # specialized straight
     if r_value > 0.8:
         reward = (
             (0.8)*reward_steering + 
-            (1.0)*reward_step + 
+            (0.8)*reward_step + 
             (0.5)*reward_throttle + 
-            (1.0)*reward_speed + 
-            (0.5)*reward_raceline 
+            (0.8)*reward_speed + 
+            (0.5)*reward_raceline +
+            (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
         )
@@ -219,7 +222,8 @@ def reward_function(params):
             (0.5)*reward_step + 
             (1.0)*reward_throttle + 
             (0.5)*reward_speed + 
-            (1.0)*reward_raceline 
+            (1.0)*reward_raceline +
+            (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
         )
@@ -230,7 +234,8 @@ def reward_function(params):
             (0.7)*reward_step + 
             (0.8)*reward_throttle + 
             (0.8)*reward_speed + 
-            (0.7)*reward_raceline 
+            (0.7)*reward_raceline +
+            (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
         )
