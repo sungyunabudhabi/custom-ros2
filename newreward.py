@@ -193,12 +193,12 @@ def reward_function(params):
     reward = on_track_reward(reward)
 
     # ---- COMBINE REWARD COMPONENTS ----
-    reward_ontrack = on_track_reward(reward)    
+    # reward_ontrack = on_track_reward(reward)    
     reward_steering = steering_reward(reward)  
     reward_step = step_reward(reward)
     reward_throttle = throttle_reward(reward)  
     reward_speed = speed_reward(reward)           
-    reward_raceline = raceline_reward(reward)  
+    # reward_raceline = raceline_reward(reward)  
     reward_waypoint = waypoint_reward(reward)
     # reward_proximity = proximity_reward(reward_proximity)
 
@@ -209,7 +209,7 @@ def reward_function(params):
             (0.8)*reward_step + 
             (0.5)*reward_throttle + 
             (0.8)*reward_speed + 
-            (0.5)*reward_raceline +
+            # (0.5)*reward_raceline +
             (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
@@ -222,7 +222,7 @@ def reward_function(params):
             (0.5)*reward_step + 
             (1.0)*reward_throttle + 
             (0.5)*reward_speed + 
-            (1.0)*reward_raceline +
+            # (1.0)*reward_raceline +
             (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
@@ -234,7 +234,7 @@ def reward_function(params):
             (0.7)*reward_step + 
             (0.8)*reward_throttle + 
             (0.8)*reward_speed + 
-            (0.7)*reward_raceline +
+            # (0.7)*reward_raceline +
             (1.0)*reward_waypoint
             # + (0.5)*reward_proximity
             # if the throttle reward becomes less significant, the car will start drifting again
