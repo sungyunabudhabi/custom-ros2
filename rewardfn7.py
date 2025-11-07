@@ -229,7 +229,7 @@ def reward_function(params):
     # reward = on_track_reward(reward)
 
     # ---- COMBINE REWARD COMPONENTS ----
-    reward_ontrack = on_track_reward(reward)    
+    # reward_ontrack = on_track_reward(reward)    
     reward_steering = steering_reward(reward)  
     reward_step = step_reward(reward)
     reward_throttle = throttle_reward(reward)           
