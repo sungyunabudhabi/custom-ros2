@@ -1,0 +1,2 @@
+SSID: 5g
+Password: dauyndauyn

@@ -4,8 +4,8 @@ import os
 
 # Specify path to .npy file
 # Call file name
-npy_file_path = "reInvent2019_track.npy"
-npy_custom_file_path = "reInvent2019_track-1000-4-2019-11-09-113228.npy"
+npy_file_path = "reinvent_base.npy"
+npy_custom_file_path = "reinvent_base-400-4-2019-10-11-161903.npy"
 
 # Load waypoints as array
 track_arr = np.load(npy_file_path)
@@ -32,7 +32,7 @@ left_points = track_arr[:, [2, 3]]
 right_points = track_arr[:, [4, 5]]
 
 # Specify filename for the .npy file
-filename = "reInvent2019_track_custom.npy"
+filename = "reinvent_base_track_custom.npy"
 
 # Save the modified track array to a new .npy file
 np.save(filename, track_arr)
