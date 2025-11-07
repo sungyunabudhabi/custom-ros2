@@ -188,40 +188,23 @@ def reward_function(params):
         return current_reward
 
     def raceline_reward(current_reward):
-        car_pos = np.array([params['x'], params['y']])
+        car   = np.array([x, y], dtype=float)
+        dists = np.linalg.norm(RACE_LINE - car, axis=1)
+        j     = int(np.argmin(dists))
+        min_dist = float(dists[j])
 
-        # distance to race line
-        distances = np.linalg.norm(RACE_LINE - car_pos, axis=1)
-        min_distance = float(np.min(distances))
+        N = len(RACE_LINE)
+        jp1 = (j + 1) % N
+        nxt = RACE_LINE[jp1]
+        race_dir = math.degrees(math.atan2(nxt[1] - RACE_LINE[j][1],
+                                        nxt[0] - RACE_LINE[j][0]))
+        hd_rl = abs(race_dir - heading)
+        if hd_rl > 180.0: hd_rl = 360.0 - hd_rl
 
-        corridor_width = 0.15
-        sharpness = 3.0
-
-        proximity_reward = np.exp(-(min_distance / corridor_width) * sharpness)
-
-        idx = int(np.argmin(distances))
-        if idx < len(RACE_LINE) - 1:
-            next_point = RACE_LINE[idx + 1]
-        else:
-            next_point = RACE_LINE[idx - 1]
-
-        race_direction = math.degrees(
-            math.atan2(next_point[1] - RACE_LINE[idx][1],
-                       next_point[0] - RACE_LINE[idx][0])
-        )
-        heading_diff = abs(race_direction - params['heading'])
-        if heading_diff > 180:
-            heading_diff = 360 - heading_diff
-
-        direction_reward = np.exp(-(heading_diff / 30.0))
-
-        line_bonus = proximity_reward * direction_reward
-
-        margin = 0.5 * track_width - distance_from_center
-        if margin < 0.1:
-            line_bonus *= 0.25
-
-        current_reward *= (1.0 + line_bonus)
+        corridor = 0.20
+        prox  = math.exp(-max(0.0, (min_dist / corridor)) * 2.5)  # 0..1
+        align = math.exp(-max(0.0, (hd_rl / 30.0)))               # 0..1
+        current_reward = 1.0 + 0.6 * (prox * align)               # 1..~1.6
 
         return current_reward
 
